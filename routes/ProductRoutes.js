@@ -24,8 +24,29 @@ router.post('/addProduct', verifyToken,
 router.get('/Products', verifyToken,
   authorize(['User','Admin']),async (req, res) => {
   try {
-    const Products = await Product.find({});
-    res.status(200).json(Products);
+    const page = parseInt(req.query.page) || 1;
+    // Read limit from query parameters (defaults to 10)
+    let limit = parseInt(req.query.limit) || 10;
+    // Safety cap: max 100 items per request
+    if (limit > 100) limit = 100;
+    const skip = (page - 1) * limit;
+
+    const [Products, totalProducts] = await Promise.all([
+      Product.find().skip(skip).limit(limit),
+      Product.countDocuments()
+    ]);
+    
+    const totalPages = Math.ceil(totalProducts / limit) || 1;
+    res.status(200).json({
+    success: true,
+    data: Products,
+    pagination: {
+    currentPage: page,
+    totalPages,
+    totalItems: totalProducts,
+    limit
+  }
+});
   } catch (error) {
     console.error('GET Product ERROR:', error.message);
     res.status(500).json({ message: 'Server error fetching Products.' });

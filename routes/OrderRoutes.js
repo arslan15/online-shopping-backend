@@ -145,11 +145,37 @@ router.post('/place-order', verifyToken,
 // 1. GET ALL ORDERS (Used by Admin Dashboard)
 // Route: GET /api/orders
 // -----------------------------------------------------------------------------
-router.get('/orders', verifyToken,
-  authorize(['Admin']), async (req, res) => {
+router.get('/orders', verifyToken, authorize(['Admin']), async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
-    return res.status(200).json(orders);
+    // 1. Extract and sanitize page and limit from query params
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, parseInt(req.query.limit, 10) || 10);
+    const skip = (page - 1) * limit;
+
+    // 2. Fetch total count and paginated items concurrently
+    const [orders, totalOrders] = await Promise.all([
+      Order.find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Order.countDocuments(),
+    ]);
+
+    const totalPages = Math.ceil(totalOrders / limit) || 1;
+
+    // 3. Return payload formatted for frontend consumption
+    return res.status(200).json({
+      orders,
+      pagination: {
+        totalOrders,
+        totalPages,
+        currentPage: page,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error) {
     console.error('Error fetching orders:', error);
     return res.status(500).json({ message: 'Failed to retrieve orders.' });

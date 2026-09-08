@@ -75,8 +75,29 @@ router.post('/addCategory', verifyToken, authorize (['Admin']), async(req,res)=>
 })
 router.get('/categories',verifyToken, authorize (['Admin']), async (req, res) => {
   try {
-    const categories = await Category.find({});
-    res.status(200).json(categories);
+    const page = parseInt(req.query.page) || 1;
+    // Read limit from query parameters (defaults to 10)
+    let limit = parseInt(req.query.limit) || 10;
+    // Safety cap: max 100 items per request
+    if (limit > 100) limit = 100;
+    const skip = (page - 1) * limit;
+
+    const [Categories, totalCategories] = await Promise.all([
+          Category.find().skip(skip).limit(limit),
+          Category.countDocuments()
+        ]);
+
+   const totalPages = Math.ceil(totalCategories / limit) || 1;
+    res.status(200).json({
+    success: true,
+    data: Categories,
+    pagination: {
+    currentPage: page,
+    totalPages,
+    totalItems: totalCategories,
+    limit
+    }
+   });
   } catch (error) {
     console.error('GET CATEGORIES ERROR:', error.message);
     res.status(500).json({ message: 'Server error fetching categories.' });
