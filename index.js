@@ -10,7 +10,7 @@ const orderRoutes = require('./routes/OrderRoutes');
 const app = express();
 connectDB();
 app.use(cors({
-  origin: 'http://localhost:3000', // Your React app URL
+  origin: 'https://online-shopping-front-end.vercel.app/', // Your React app URL
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
