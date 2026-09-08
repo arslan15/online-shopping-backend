@@ -9,11 +9,23 @@ const ContactRoutes = require('./routes/ContactRoutes');
 const orderRoutes = require('./routes/OrderRoutes');
 const app = express();
 connectDB();
+const allowedOrigins = [
+  'https://online-shopping-front-end.vercel.app',
+  'https://online-shopping-front-end.vercel.app/',
+  'http://localhost:3000'
+];
 app.use(cors({
-  origin: 'https://online-shopping-front-end.vercel.app/', // Your React app URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use('/api', productRoutes);
