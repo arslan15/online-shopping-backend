@@ -34,6 +34,8 @@ try {
       if (isPasswordValid) {
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(password, salt);
+        user.password = undefined;
+        user.confirmPassword = undefined;
         await user.save(); 
       }
     }
