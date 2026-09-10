@@ -85,22 +85,22 @@ router.post('/register', async(req,res)=>{
     });
   }
   // 3. Reject if maintenance mode is enabled and the user is NOT an Admin
-    if (settings && settings.maintenanceMode && req.body.role !== 'Admin') {
+    if (settings && settings.maintenanceMode === true && req.body.role !== 'Admin') {
       return res.status(503).json({
         message: 'Application is currently under maintenance. New user registrations are temporarily paused.',
       });
     }
-    if (settings && settings.userLogin) {
+    if (settings && settings.userLogin === false && req.body.role !== 'Admin') {
       return res.status(503).json({
         message: 'Application is currently under maintenance. Existing User Login are temporarily paused.',
       });
     }
 
     console.log('1. Register endpoint hit with body:', req.body);
-    const { name, email, password ,confirmPassword,role,isActive} = req.body;
+    let { name, email, password, confirmPassword, role, isActive } = req.body;
     const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const hashedConfirmPassword = await bcrypt.hash(confirmPassword, saltRounds);
+    password = await bcrypt.hash(password, saltRounds);
+    confirmPassword = await bcrypt.hash(confirmPassword, saltRounds);
    console.log('2. Querying MongoDB for email:', email);
     const existingUser = await User.findOne({ email });
 console.log('3. Query completed. Result:', existingUser);
@@ -108,7 +108,7 @@ console.log('3. Query completed. Result:', existingUser);
       return res.status(400).json({ message: 'An account with this email already exists.' });
     }
 
-    const newUser = new User({name, email, hashedPassword,hashedConfirmPassword, role: role, isActive: isActive });
+    const newUser = new User({name, email, password, confirmPassword, role: role, isActive: isActive });
     await newUser.save();
 
     res.status(201).json({ message: 'Account created successfully!' });
