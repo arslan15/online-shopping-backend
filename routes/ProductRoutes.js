@@ -28,13 +28,24 @@ router.get('/Products', verifyToken,
     const page = parseInt(req.query.page) || 1;
     // Read limit from query parameters (defaults to 10)
     let limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search ? req.query.search.trim() : '';
     // Safety cap: max 100 items per request
     if (limit > 100) limit = 100;
     const skip = (page - 1) * limit;
-
+// Build the query filter
+    let filter = {};
+    if (search) {
+      filter = {
+        $or: [
+          { productName: { $regex: search, $options: 'i' } },
+          { productCategoryType: { $regex: search, $options: 'i' } },
+          { ProductDescription: { $regex: search, $options: 'i' } },
+        ],
+      };
+    }
     const [Products, totalProducts] = await Promise.all([
-      Product.find().skip(skip).limit(limit),
-      Product.countDocuments()
+      Product.find(filter).skip(skip).limit(limit),
+      Product.countDocuments(filter)
     ]);
     
     const totalPages = Math.ceil(totalProducts / limit) || 1;
