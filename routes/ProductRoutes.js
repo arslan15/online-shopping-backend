@@ -8,12 +8,13 @@ router.get('/', (req, res) => {
 router.post('/addProduct', verifyToken,
   authorize(['Admin']), async(req,res)=>{
   try {
-    
+    console.log(verifyToken);
     const {productName, ProductDescription, productCategoryType,ProductQty,ImageUrl,price} = req.body;
     const newProduct = new Product({productName, ProductDescription, productCategoryType,ProductQty,ImageUrl,price });
     await newProduct.save();
 
-    res.status(201).json({ message: 'Product added successfully!' });
+    res.status(201).json({ message: 'Product added successfully!'
+      ,product: newProduct });
   } catch (error) {
     console.error('ADD PRODUCT CATCH ERROR:', error.message);
   
